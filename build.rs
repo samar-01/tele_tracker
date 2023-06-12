@@ -9,10 +9,10 @@ fn main() {
 	// println!("cargo:rerun-if-changed=build.rs");
 	// println!("cargo:rerun-if-changed=path/to/Cargo.lock");
 
-	println!("cargo:rerun-if-changed=src/teleC.c");
-	cc::Build::new().file("src/teleC.c").file("src/nexstar.c").include("src/libnexstar/src").compile("teleC");
+	println!("cargo:rerun-if-changed=src/teleC.cpp");
+	cc::Build::new().file("src/teleC.cpp").file("src/nexstar.c").include("src/libnexstar/src").compile("teleC");
 	let bindings = bindgen::Builder::default()
-		.header("src/teleC.c")
+		.header("src/teleC.cpp")
 		.parse_callbacks(Box::new(bindgen::CargoCallbacks))
 		.generate()
 		.expect("Unable to generate bindings");
