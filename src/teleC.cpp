@@ -78,18 +78,18 @@ void get_loc(){
 	printf("%f, %f\n", lon, lat);
 }
 
-typedef struct AltAz {
+typedef struct AltAzm {
 	double alt;
 	double azm;
-} AltAz;
+} AltAzm;
 
-AltAz get_alt_az(){
-	AltAz a;
+AltAzm get_alt_az(){
+	AltAzm a;
 	tc_get_azalt_p(dev, &a.azm, &a.alt);
 	return a;
 }
 
-void goto_alt_az(AltAz a){
+void goto_alt_az(AltAzm a){
 	if (a.azm < 0) {
 		a.azm += 360;
 	} 

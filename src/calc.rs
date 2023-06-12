@@ -1,76 +1,161 @@
-use crate::tele::AltAz;
-const SEMI_MAJOR_AXIS: f64 = 6378137.0; // Equatorial radius of WGS84 ellipsoid in meters
-const SEMI_MINOR_AXIS: f64 = 6356752.314245; // Polar radius of WGS84 ellipsoid in meters
+use crate::tele::AltAzm;
+use nalgebra::Vector3;
+use std::f64::consts::PI;
 
 pub fn calculate_angles(
-	latitude1: f64,
-	longitude1: f64,
-	altitude1: f64,
-	latitude2: f64,
-	longitude2: f64,
-	altitude2: f64,
-) -> AltAz {
-	// Convert degrees to radians
-	let latitude1_rad = latitude1.to_radians();
-	let longitude1_rad = longitude1.to_radians();
-	let latitude2_rad = latitude2.to_radians();
-	let longitude2_rad = longitude2.to_radians();
+	lat1: f64,
+	lon1: f64,
+	alt1: f64,
+	lat2: f64,
+	lon2: f64,
+	alt2: f64,
+) -> AltAzm {
+	let alt = calculate_alt(lat1, lon1, alt1, lat2, lon2, alt2);
+	let azm = calculate_azm(lat1, lon1, lat2, lon2);
+	AltAzm{alt:alt, azm:azm}
+}
 
-	// Calculate differences in longitudes and latitudes
-	let delta_longitude = longitude2_rad - longitude1_rad;
-	let delta_latitude = latitude2_rad - latitude1_rad;
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use approx::relative_eq;
+	#[test]
+	fn straight() {
+		assert_eq!(0.0, calculate_azm(0.0, 0.0, 0.0, 0.0));
+		assert_eq!(0.0, calculate_azm(0.0, 0.0, 1.0, 0.0));
+		assert_eq!(180.0, calculate_azm(0.0, 0.0, -1.0, 0.0));
+		assert_eq!(90.0, calculate_azm(0.0, 0.0, 0.0, 1.0));
+		assert_eq!(270.0, calculate_azm(0.0, 0.0, 0.0, -1.0));
+		assert_eq!(270.0, calculate_azm(0.0, 0.0, 0.0, 355.0));
 
-	// Calculate the average latitude
-	let avg_latitude = (latitude1_rad + latitude2_rad) / 2.0;
+		assert_eq!(90.0, calculate_azm(0.0, 0.0, 0.0, 179.0));
+	}
+	#[test]
+	fn diag() {
+		let dir = calculate_azm(0.0, 0.0, 1.0, 1.0);
+		assert!((dir - 45.0).abs() < 0.01);
+	}
 
-	// Calculate the prime vertical radius of curvature
-	let prime_vertical_radius = SEMI_MAJOR_AXIS
-		/ (1.0
-			- ((SEMI_MINOR_AXIS / SEMI_MAJOR_AXIS)
-				* avg_latitude.sin().powi(2))
-			.sqrt());
+	#[test]
+	fn normal() {
+		assert!(relative_eq!(
+			Vector3::new(1.0, 0.0, 0.0),
+			calculate_normal_vector(0.0, 0.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(-1.0, 0.0, 0.0),
+			calculate_normal_vector(0.0, 180.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(0.0, 1.0, 0.0),
+			calculate_normal_vector(0.0, 90.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(0.0, -1.0, 0.0),
+			calculate_normal_vector(0.0, 270.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(0.0, 0.0, 1.0),
+			calculate_normal_vector(90.0, 0.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(0.0, 0.0, -1.0),
+			calculate_normal_vector(-90.0, 0.0)
+		));
+	}
 
-	// Calculate the north component and east component of the azimuth vector
-	let north_component =
-		delta_latitude.sin() * prime_vertical_radius * avg_latitude.cos();
-	let east_component = delta_longitude.sin()
-		* prime_vertical_radius
-		* avg_latitude.sin().cos();
-
-	// Calculate the azimuth angle
-	let theta = east_component.atan2(north_component);
-
-	// Calculate altitude angle
-	let altitude = (altitude2 - altitude1).atan2(calculate_distance(
-		latitude1_rad,
-		longitude1_rad,
-		latitude2_rad,
-		longitude2_rad,
-	));
-
-	AltAz {
-		azm: theta.to_degrees(),
-		alt: altitude.to_degrees(),
+	#[test]
+	fn s2c() {
+		assert!(relative_eq!(
+			Vector3::new(0.0, 0.0, 0.0),
+			spherical_to_cartesian(0.0, 0.0, 0.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(0.0, 0.0, 1.0),
+			spherical_to_cartesian(1.0, 0.0, 0.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(0.0, 0.0, 123.0),
+			spherical_to_cartesian(123.0, 0.0, 0.0)
+		));
+		assert!(relative_eq!(
+			// assert_eq!(
+			Vector3::new(1.0, 0.0, 0.0),
+			spherical_to_cartesian(1.0, 0.0, 90.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(0.0, 1.0, 0.0),
+			spherical_to_cartesian(1.0, 90.0, 90.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(2.0_f64.sqrt()/2.0, 0.0, 2.0_f64.sqrt()/2.0),
+			spherical_to_cartesian(1.0, 0.0, 45.0)
+		));
+		assert!(relative_eq!(
+			Vector3::new(2.0_f64.sqrt()/2.0, 2.0_f64.sqrt()/2.0, 0.0),
+			spherical_to_cartesian(1.0, 45.0, 90.0)
+		));
 	}
 }
 
-fn calculate_distance(
-	latitude1: f64,
-	longitude1: f64,
-	latitude2: f64,
-	longitude2: f64,
+fn calculate_azm(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
+	let lat1_rad = lat1.to_radians();
+	let lon1_rad = lon1.to_radians();
+	let lat2_rad = lat2.to_radians();
+	let lon2_rad = lon2.to_radians();
+
+	let delta_lon = lon2_rad - lon1_rad;
+
+	let bearing = (delta_lon.sin() * lat2_rad.cos()).atan2(
+		lat1_rad.cos() * lat2_rad.sin()
+			- lat1_rad.sin() * lat2_rad.cos() * delta_lon.cos(),
+	);
+
+	let initial_bearing = bearing.to_degrees();
+	let azm = (initial_bearing + 360.0) % 360.0;
+
+	azm
+}
+
+fn calculate_normal_vector(lat: f64, lon: f64) -> Vector3<f64> {
+	let lat_rad = lat.to_radians();
+	let lon_rad = lon.to_radians();
+
+	let x = lat_rad.cos() * lon_rad.cos();
+	let y = lat_rad.cos() * lon_rad.sin();
+	let z = lat_rad.sin();
+
+	Vector3::new(x, y, z)
+}
+
+fn calculate_alt(
+	lat1: f64,
+	lon1: f64,
+	alt1: f64,
+	lat2: f64,
+	lon2: f64,
+	alt2: f64,
 ) -> f64 {
-	let delta_latitude = latitude2 - latitude1;
-	let delta_longitude = longitude2 - longitude1;
+	let earth_radius = 6371000.0;
 
-	let a = (delta_latitude / 2.0).sin().powi(2)
-		+ latitude1.sin()
-			* latitude2.sin()
-			* (delta_longitude / 2.0).sin().powi(2);
+	let pos1 = spherical_to_cartesian(earth_radius+alt1, lon1+180.0, lat1-90.0);
+	let pos2 = spherical_to_cartesian(earth_radius+alt2, lon2+180.0, lat2-90.0);
 
-	let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
+	let dif = pos2 - pos1;
+	let distance = dif.norm();
+	let dir = dif/distance;
+	let normal = calculate_normal_vector(lat1, lon1);
+	let alt = 90.0 - (normal.dot(&dir)/(normal.norm()*dir.norm())).acos()*180.0/PI;
+	alt
+}
 
-	const R: f64 = SEMI_MAJOR_AXIS; // Approximating distance using equatorial radius
+fn spherical_to_cartesian(radius: f64, theta: f64, phi: f64) -> Vector3<f64> {
+	let phi_rad = phi.to_radians();
+	let theta_rad = theta.to_radians();
 
-	R * c
+	let x = radius * phi_rad.sin() * theta_rad.cos();
+	let y = radius * phi_rad.sin() * theta_rad.sin();
+	let z = radius * phi_rad.cos();
+
+	Vector3::new(x, y, z)
 }
