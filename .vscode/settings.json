@@ -1,0 +1,12 @@
+{
+	"files.associations": {
+		"*.cu": "cpp",
+		"inet.h": "c",
+		"socket.h": "c",
+		"math.h": "c",
+		"fcntl.h": "c",
+		"wrapper.h": "c",
+		"nexstar.h": "c",
+		"stdio.h": "c"
+	}
+}

@@ -1,0 +1,4 @@
+hard_tabs = true
+reorder_imports = true
+chain_width = 60
+max_width = 80
