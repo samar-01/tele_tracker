@@ -33,12 +33,13 @@ fn main() {
 			let lat2: f64 = args.get(5).unwrap().parse().unwrap();
 			let lon2: f64 = args.get(6).unwrap().parse().unwrap();
 			let alt2: f64 = args.get(7).unwrap().parse().unwrap();
+			let offset = get_offset(8, &args);
 			let target =
 				calc::calculate_angles(lat, lon, alt, lat2, lon2, alt2);
 			dbg!(target);
 			if slew_confirm() {
 				unsafe {
-					tele::goto_alt_az(target);
+					tele::goto_alt_az(apply_offset(target, offset));
 				}
 			}
 		}
@@ -46,6 +47,7 @@ fn main() {
 			let lat: f64 = args.get(2).unwrap().parse().unwrap();
 			let lon: f64 = args.get(3).unwrap().parse().unwrap();
 			let alt: f64 = args.get(4).unwrap().parse().unwrap();
+			let offset = get_offset(5, &args);
 			println!("Enter a position (lat lon alt, separated by commas or spaces):");
 			let mut x = String::new();
 			stdin().read_line(&mut x).expect("Failed to read line");
@@ -64,7 +66,7 @@ fn main() {
 				dbg!(target);
 				if slew_confirm() {
 					unsafe {
-						tele::goto_alt_az(target);
+						tele::goto_alt_az(apply_offset(target, offset));
 					}
 				}
 			}
@@ -93,10 +95,21 @@ fn main() {
 				}
 			}
 		}
+		"pos" => {
+			unsafe { dbg!(tele::get_alt_az()) };
+		}
 		_ => {
 			panic!("Unknown input");
 		}
 	}
+}
+
+fn get_offset(i: usize, args: &Vec<String>) -> f64{
+	args.get(i).expect("0.0").parse().unwrap()
+}
+
+fn apply_offset(target: AltAzm, offset: f64) -> AltAzm{
+	AltAzm{alt:target.alt, azm:target.azm+offset}
 }
 
 fn confirm() -> bool {
