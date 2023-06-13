@@ -6,9 +6,12 @@ pub mod tele;
 
 fn main() {
 	let args: Vec<String> = env::args().collect();
-	let x: bool = unsafe { tele::init() };
-	if !x {
-		panic!("Failed to initalize");
+	let init: bool = unsafe { tele::init() };
+	if !init {
+		println!("Failed to initalize");
+		if !confirm() {
+			panic!("Failed to initalize");
+		}
 	}
 	unsafe {
 		tele::stop();
@@ -27,16 +30,17 @@ fn main() {
 	let x = args.get(1).unwrap();
 	match x as &str {
 		"loc" => {
-			let lat: f64 = args.get(2).unwrap().parse().unwrap();
-			let lon: f64 = args.get(3).unwrap().parse().unwrap();
-			let alt: f64 = args.get(4).unwrap().parse().unwrap();
+			let lat1: f64 = args.get(2).unwrap().parse().unwrap();
+			let lon1: f64 = args.get(3).unwrap().parse().unwrap();
+			let alt1: f64 = args.get(4).unwrap().parse().unwrap();
 			let lat2: f64 = args.get(5).unwrap().parse().unwrap();
 			let lon2: f64 = args.get(6).unwrap().parse().unwrap();
 			let alt2: f64 = args.get(7).unwrap().parse().unwrap();
-			let offset = get_offset(8, &args);
+			let offset = get_offset(8, args);
 			let target =
-				calc::calculate_angles(lat, lon, alt, lat2, lon2, alt2);
+				calc::calculate_angles(lat1, lon1, alt1, lat2, lon2, alt2);
 			dbg!(target);
+			calc::print_visible(lat1, lon1, alt1, lat2, lon2, alt2);
 			if slew_confirm() {
 				unsafe {
 					tele::goto_alt_az(apply_offset(target, offset));
@@ -44,10 +48,10 @@ fn main() {
 			}
 		}
 		"input" => loop {
-			let lat: f64 = args.get(2).unwrap().parse().unwrap();
-			let lon: f64 = args.get(3).unwrap().parse().unwrap();
-			let alt: f64 = args.get(4).unwrap().parse().unwrap();
-			let offset = get_offset(5, &args);
+			let lat1: f64 = args.get(2).unwrap().parse().unwrap();
+			let lon1: f64 = args.get(3).unwrap().parse().unwrap();
+			let alt1: f64 = args.get(4).unwrap().parse().unwrap();
+			let offset = get_offset(5, args.clone());
 			println!("Enter a position (lat lon alt, separated by commas or spaces):");
 			let mut x = String::new();
 			stdin().read_line(&mut x).expect("Failed to read line");
@@ -60,10 +64,11 @@ fn main() {
 				let lat2 = floats[0];
 				let lon2 = floats[1];
 				let alt2 = floats[2];
-				dbg!(lat, lon, alt);
+				dbg!(lat1, lon1, alt1);
 				let target =
-					calc::calculate_angles(lat, lon, alt, lat2, lon2, alt2);
+					calc::calculate_angles(lat1, lon1, alt1, lat2, lon2, alt2);
 				dbg!(target);
+				calc::print_visible(lat1, lon1, alt1, lat2, lon2, alt2);
 				if slew_confirm() {
 					unsafe {
 						tele::goto_alt_az(apply_offset(target, offset));
@@ -104,12 +109,18 @@ fn main() {
 	}
 }
 
-fn get_offset(i: usize, args: &Vec<String>) -> f64{
-	args.get(i).expect("0.0").parse().unwrap()
+fn get_offset(i: usize, args: Vec<String>) -> f64 {
+	match args.get(i) {
+		Some(a) => a.parse().unwrap(),
+		None => 0.0,
+	}
 }
 
-fn apply_offset(target: AltAzm, offset: f64) -> AltAzm{
-	AltAzm{alt:target.alt, azm:target.azm+offset}
+fn apply_offset(target: AltAzm, offset: f64) -> AltAzm {
+	AltAzm {
+		alt: target.alt,
+		azm: target.azm + offset,
+	}
 }
 
 fn confirm() -> bool {
@@ -117,7 +128,7 @@ fn confirm() -> bool {
 	let mut x = String::new();
 	stdin().read_line(&mut x).expect("Failed to read line");
 	x = x.trim().to_string().to_lowercase();
-	return x == "y";
+	x == "y"
 }
 
 fn slew_confirm() -> bool {
