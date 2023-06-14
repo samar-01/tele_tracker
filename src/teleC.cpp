@@ -92,6 +92,6 @@ AltAzm get_alt_az(){
 void goto_alt_az(AltAzm a){
 	if (a.azm < 0) {
 		a.azm += 360;
-	} 
+	}
 	tc_goto_azalt_p(dev, a.azm, a.alt);
 }
