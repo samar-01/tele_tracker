@@ -4,7 +4,7 @@ use std::f64::consts::PI;
 static EARTH_RADIUS: f64 = 6371000.0;
 
 #[derive(Debug)]
-pub struct position {
+pub struct Position {
 	pub lat: f64,
 	pub lon: f64,
 	pub alt: f64,

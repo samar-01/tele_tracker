@@ -1,5 +1,5 @@
 use crate::teleBind::AltAzm;
-use std::{env, error::Error, io::stdin};
+use std::{env, io::stdin};
 pub mod calc;
 pub mod tele;
 pub mod teleBind;
@@ -39,7 +39,6 @@ fn main() {
 			let target =
 				calc::calculate_angles(lat1, lon1, alt1, lat2, lon2, alt2);
 			calc::print_visible(lat1, lon1, alt1, lat2, lon2, alt2);
-			let target = apply_offset(target, offset);
 			dbg!(apply_offset(target, offset));
 			if slew_confirm() {
 				tel.goto_alt_az(apply_offset(target, offset));
@@ -144,7 +143,7 @@ fn main() {
 	}
 }
 
-fn get_data(balloon: String) -> calc::position {
+fn get_data(balloon: String) -> calc::Position {
 	let x = reqwest::blocking::get(format!(
 		"http://api.v2.sondehub.org/sonde/{}",
 		balloon
@@ -152,15 +151,15 @@ fn get_data(balloon: String) -> calc::position {
 	.unwrap()
 	.text()
 	.unwrap();
-	let mut y = json::parse(&x).unwrap().pop();
+	let y = json::parse(&x).unwrap().pop();
 	let lat = y["lat"].as_f64().unwrap();
 	let lon = y["lon"].as_f64().unwrap();
 	let alt = y["alt"].as_f64().unwrap();
 
-	let pos = calc::position {
-		lat: lat,
-		lon: lon,
-		alt: alt,
+	let pos = calc::Position {
+		lat,
+		lon,
+		alt,
 	};
 	dbg!(&pos);
 	pos
