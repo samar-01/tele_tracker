@@ -8,7 +8,7 @@ pub mod teleBind;
 fn main() {
 	let args: Vec<String> = env::args().collect();
 
-	let mut tel = tele::Telescope::new();
+	let mut tel = tele::Telescope::new(0.3, 0.0, 0.2);
 	let init: bool = tel.init();
 	if !init {
 		println!("Failed to initalize");
@@ -22,10 +22,15 @@ fn main() {
 	if !is_aligned {
 		dbg!(tel.get_alt_az());
 		println!("Not aligned");
-		if !confirm() {
-			panic!("Exiting since not aligned");
-		}
+		// if !confirm() {
+		// 	panic!("Exiting since not aligned");
+		// }
 	}
+	tel.pid_goto(AltAzm {
+		alt: (0.0),
+		azm: (10.0),
+	});
+	panic!("asdf");
 
 	let x = args.get(1).unwrap();
 	match x as &str {
@@ -139,12 +144,16 @@ fn apply_offset(target: AltAzm, offset: f64) -> AltAzm {
 	}
 }
 
-fn confirm() -> bool {
-	println!("Enter y to confirm");
+fn input() -> String{
 	let mut x = String::new();
 	stdin().read_line(&mut x).expect("Failed to read line");
 	x = x.trim().to_string().to_lowercase();
-	x == "y"
+	x
+}
+
+fn confirm() -> bool {
+	println!("Enter y to confirm");
+	input() == "y"
 }
 
 fn slew_confirm() -> bool {

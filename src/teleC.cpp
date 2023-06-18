@@ -40,7 +40,7 @@ void print_model() {
 	printf("Mount id=%d name=%s\n", mountno, nex);
 }
 
-void rotate(float xspeed, float yspeed) {
+void rotate(double xspeed, double yspeed) {
 	if (xspeed > 1) {
 		xspeed = 1;
 	}

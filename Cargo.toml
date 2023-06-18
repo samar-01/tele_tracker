@@ -9,6 +9,7 @@ build = "build.rs"
 [dependencies]
 approx = "0.5.1"
 nalgebra = "0.32.2"
+pid = "4.0.0"
 # nalgebra = { version = "0.32.2", features = ["approx"] }
 
 [build-dependencies]
