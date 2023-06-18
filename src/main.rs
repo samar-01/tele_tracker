@@ -1,6 +1,5 @@
-use std::{env, io::stdin};
-
 use crate::teleBind::AltAzm;
+use std::{env, error::Error, io::stdin};
 pub mod calc;
 pub mod tele;
 pub mod teleBind;
@@ -39,8 +38,9 @@ fn main() {
 			let offset = get_offset(8, args);
 			let target =
 				calc::calculate_angles(lat1, lon1, alt1, lat2, lon2, alt2);
-			dbg!(apply_offset(target, offset));
 			calc::print_visible(lat1, lon1, alt1, lat2, lon2, alt2);
+			let target = apply_offset(target, offset);
+			dbg!(apply_offset(target, offset));
 			if slew_confirm() {
 				tel.goto_alt_az(apply_offset(target, offset));
 			}
@@ -119,10 +119,51 @@ fn main() {
 				tel.goto_alt_az(target);
 			}
 		}
+		"balloon" => {
+			let lat1: f64 = args.get(2).unwrap().parse().unwrap();
+			let lon1: f64 = args.get(3).unwrap().parse().unwrap();
+			let alt1: f64 = args.get(4).unwrap().parse().unwrap();
+			loop {
+				let balloon = args.get(5).unwrap().to_string();
+				let balloonpos = get_data(balloon);
+				let lat2 = balloonpos.lat;
+				let lon2 = balloonpos.lon;
+				let alt2 = balloonpos.alt;
+				let target =
+					calc::calculate_angles(lat1, lon1, alt1, lat2, lon2, alt2);
+				dbg!(target);
+				if slew_confirm() {
+					tel.goto_alt_az(target);
+				}
+				input();
+			}
+		}
 		_ => {
 			panic!("Unknown input");
 		}
 	}
+}
+
+fn get_data(balloon: String) -> calc::position {
+	let x = reqwest::blocking::get(format!(
+		"http://api.v2.sondehub.org/sonde/{}",
+		balloon
+	))
+	.unwrap()
+	.text()
+	.unwrap();
+	let mut y = json::parse(&x).unwrap().pop();
+	let lat = y["lat"].as_f64().unwrap();
+	let lon = y["lon"].as_f64().unwrap();
+	let alt = y["alt"].as_f64().unwrap();
+
+	let pos = calc::position {
+		lat: lat,
+		lon: lon,
+		alt: alt,
+	};
+	dbg!(&pos);
+	pos
 }
 
 fn get_offset(i: usize, args: Vec<String>) -> f64 {
@@ -139,12 +180,15 @@ fn apply_offset(target: AltAzm, offset: f64) -> AltAzm {
 	}
 }
 
-fn confirm() -> bool {
-	println!("Enter y to confirm");
+fn input() -> String {
 	let mut x = String::new();
 	stdin().read_line(&mut x).expect("Failed to read line");
-	x = x.trim().to_string().to_lowercase();
-	x == "y"
+	x.trim().to_string().to_lowercase()
+}
+
+fn confirm() -> bool {
+	println!("Enter y to confirm");
+	input() == "y"
 }
 
 fn slew_confirm() -> bool {

@@ -3,6 +3,13 @@ use nalgebra::Vector3;
 use std::f64::consts::PI;
 static EARTH_RADIUS: f64 = 6371000.0;
 
+#[derive(Debug)]
+pub struct position {
+	pub lat: f64,
+	pub lon: f64,
+	pub alt: f64,
+}
+
 pub fn calculate_angles(
 	lat1: f64,
 	lon1: f64,
