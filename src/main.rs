@@ -35,13 +35,12 @@ fn main() {
 			let lat2: f64 = args.get(5).unwrap().parse().unwrap();
 			let lon2: f64 = args.get(6).unwrap().parse().unwrap();
 			let alt2: f64 = args.get(7).unwrap().parse().unwrap();
-			let offset = get_offset(8, args);
 			let target =
 				calc::calculate_angles(lat1, lon1, alt1, lat2, lon2, alt2);
 			calc::print_visible(lat1, lon1, alt1, lat2, lon2, alt2);
-			dbg!(apply_offset(target, offset));
+			dbg!(target);
 			if slew_confirm() {
-				tel.goto_alt_az(apply_offset(target, offset));
+				tel.goto_alt_az(target);
 			}
 		}
 		"input" => {
@@ -49,7 +48,6 @@ fn main() {
 			let lon1: f64 = args.get(3).unwrap().parse().unwrap();
 			let alt1: f64 = args.get(4).unwrap().parse().unwrap();
 			loop {
-				let offset = get_offset(5, args.clone());
 				println!("Enter a position (lat lon alt, separated by commas or spaces):");
 				let mut x = String::new();
 				stdin().read_line(&mut x).expect("Failed to read line");
@@ -69,7 +67,7 @@ fn main() {
 					dbg!(target);
 					calc::print_visible(lat1, lon1, alt1, lat2, lon2, alt2);
 					if slew_confirm() {
-						tel.goto_alt_az(apply_offset(target, offset));
+						tel.goto_alt_az(target);
 					}
 				}
 			}
@@ -163,20 +161,6 @@ fn get_data(balloon: String) -> calc::Position {
 	};
 	dbg!(&pos);
 	pos
-}
-
-fn get_offset(i: usize, args: Vec<String>) -> f64 {
-	match args.get(i) {
-		Some(a) => a.parse().unwrap(),
-		None => 0.0,
-	}
-}
-
-fn apply_offset(target: AltAzm, offset: f64) -> AltAzm {
-	AltAzm {
-		alt: target.alt,
-		azm: target.azm - offset,
-	}
 }
 
 fn input() -> String {
