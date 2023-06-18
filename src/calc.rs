@@ -1,4 +1,4 @@
-use crate::tele::AltAzm;
+use crate::teleBind::AltAzm;
 use nalgebra::Vector3;
 use std::f64::consts::PI;
 static EARTH_RADIUS: f64 = 6371000.0;

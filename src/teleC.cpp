@@ -5,7 +5,7 @@
 // using namespace std;
 
 int8_t dev;
-bool init() {
+int8_t init() {
 	dev = open_telescope("/dev/ttyUSB0");
 	enforce_protocol_version(dev, VER_AUTO);
 	if (dev == -1) {
@@ -30,7 +30,7 @@ bool init() {
 	tc_get_time(dev, &ttime, &tz, &dst);
 	printf("time = %stz = %d, dst = %d\n", ctime(&ttime), tz, dst);
 
-	return true;
+	return dev;
 }
 
 void print_model() {
@@ -64,7 +64,7 @@ void stop() {
 	tc_slew_variable(dev, TC_AXIS_ALT, 0, 0);
 }
 
-int8_t is_aligned() {
+bool is_aligned() {
 	return tc_check_align(dev);
 }
 

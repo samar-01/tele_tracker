@@ -1,32 +1,26 @@
 use std::{env, io::stdin};
 
-use crate::tele::AltAzm;
+use crate::teleBind::AltAzm;
 pub mod calc;
 pub mod tele;
+pub mod teleBind;
 
 fn main() {
 	let args: Vec<String> = env::args().collect();
 
-	let init: bool = unsafe { tele::init() };
+	let mut tel = tele::Telescope::new();
+	let init: bool = tel.init();
 	if !init {
 		println!("Failed to initalize");
 		if !confirm() {
 			panic!("Failed to initalize");
 		}
 	}
+	tel.print_model();
 
-	// let lat1: f64 = args.get(2).unwrap().parse().unwrap();
-	// let lon1: f64 = args.get(3).unwrap().parse().unwrap();
-	// let alt1: f64 = args.get(4).unwrap().parse().unwrap();
-	unsafe {
-		tele::stop();
-		tele::print_model();
-		// tele::set_loc(lat1, lon1);
-	}
-
-	let is_aligned: i8 = unsafe { tele::is_aligned() };
-	if is_aligned != 1 {
-		unsafe { dbg!(tele::get_alt_az()) };
+	let is_aligned = tel.is_aligned();
+	if !is_aligned {
+		dbg!(tel.get_alt_az());
 		println!("Not aligned");
 		if !confirm() {
 			panic!("Exiting since not aligned");
@@ -48,9 +42,7 @@ fn main() {
 			dbg!(apply_offset(target, offset));
 			calc::print_visible(lat1, lon1, alt1, lat2, lon2, alt2);
 			if slew_confirm() {
-				unsafe {
-					tele::goto_alt_az(apply_offset(target, offset));
-				}
+				tel.goto_alt_az(apply_offset(target, offset));
 			}
 		}
 		"input" => {
@@ -78,9 +70,7 @@ fn main() {
 					dbg!(target);
 					calc::print_visible(lat1, lon1, alt1, lat2, lon2, alt2);
 					if slew_confirm() {
-						unsafe {
-							tele::goto_alt_az(apply_offset(target, offset));
-						}
+						tel.goto_alt_az(apply_offset(target, offset));
 					}
 				}
 			}
@@ -102,15 +92,13 @@ fn main() {
 					};
 					dbg!(target);
 					if slew_confirm() {
-						unsafe {
-							tele::goto_alt_az(target);
-						}
+						tel.goto_alt_az(target);
 					}
 				}
 			}
 		}
 		"pos" => {
-			unsafe { dbg!(tele::get_alt_az()) };
+			dbg!(tel.get_alt_az());
 		}
 		"calib" => {
 			let lat1: f64 = args.get(2).unwrap().parse().unwrap();
@@ -121,16 +109,14 @@ fn main() {
 			let alt2: f64 = args.get(7).unwrap().parse().unwrap();
 			let true_pos =
 				calc::calculate_angles(lat1, lon1, alt1, lat2, lon2, alt2);
-			let current_pos = unsafe { tele::get_alt_az() };
+			let current_pos = tel.get_alt_az();
 			let target = AltAzm {
 				alt: (current_pos.alt - true_pos.alt),
 				azm: (current_pos.azm - true_pos.azm),
 			};
 			dbg!(target);
 			if slew_confirm() {
-				unsafe {
-					tele::goto_alt_az(target);
-				}
+				tel.goto_alt_az(target);
 			}
 		}
 		_ => {
