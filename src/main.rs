@@ -120,9 +120,9 @@ fn main() {
 			let lat1: f64 = args.get(2).unwrap().parse().unwrap();
 			let lon1: f64 = args.get(3).unwrap().parse().unwrap();
 			let alt1: f64 = args.get(4).unwrap().parse().unwrap();
+			let balloon = args.get(5).unwrap().to_string();
 			loop {
-				let balloon = args.get(5).unwrap().to_string();
-				let balloonpos = get_data(balloon);
+				let balloonpos = get_data(balloon.clone());
 				let lat2 = balloonpos.lat;
 				let lon2 = balloonpos.lon;
 				let alt2 = balloonpos.alt;
@@ -131,6 +131,8 @@ fn main() {
 				dbg!(target);
 				if slew_confirm() {
 					tel.goto_alt_az(target);
+				} else {
+					break;
 				}
 				input();
 			}
@@ -142,6 +144,7 @@ fn main() {
 }
 
 fn get_data(balloon: String) -> calc::Position {
+	println!("Getting data on balloon: {}", balloon);
 	let x = reqwest::blocking::get(format!(
 		"http://api.v2.sondehub.org/sonde/{}",
 		balloon
@@ -154,11 +157,7 @@ fn get_data(balloon: String) -> calc::Position {
 	let lon = y["lon"].as_f64().unwrap();
 	let alt = y["alt"].as_f64().unwrap();
 
-	let pos = calc::Position {
-		lat,
-		lon,
-		alt,
-	};
+	let pos = calc::Position { lat, lon, alt };
 	dbg!(&pos);
 	pos
 }
