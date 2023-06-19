@@ -1,0 +1,3 @@
+[submodule "src/libnexstar"]
+	path = src/libnexstar
+	url = git@github.com:samar-01/libnexstar.git
