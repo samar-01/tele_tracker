@@ -51,16 +51,16 @@ fn run_tele(tel: Arc<Mutex<Telescope>>, target: Arc<Mutex<AltAzm>>) {
 			let guard = target.lock().unwrap();
 			tar = *guard;
 		}
-		dbg!(tar);
+		// dbg!(tar);
 		// tel.goto_alt_az(tar);
-		let start_time = std::time::Instant::now();
+		// let start_time = std::time::Instant::now();
 		{
 			let guard = tel.lock().unwrap();
 			guard.goto_test(tar);
 		}
-		let end_time = std::time::Instant::now();
-		let elapsed_time = end_time.duration_since(start_time);
-		dbg!(elapsed_time);
+		// let end_time = std::time::Instant::now();
+		// let elapsed_time = end_time.duration_since(start_time);
+		// dbg!(elapsed_time);
 		std::thread::sleep(std::time::Duration::from_millis(300));
 	}
 }
@@ -106,9 +106,9 @@ impl rotctlServer {
 						format!("{}\n{}\n", current.azm, current.alt)
 					}
 					Some('S') => "RPRT 0\n".to_string(),
-					Some('q') => "RPRT 0\n".to_string(),
+					// Some('q') => "RPRT 0\n".to_string(),
 					Some('P') => {
-						println!("New position");
+						// println!("New position");
 						let dat = data.split(' ').collect::<Vec<&str>>();
 						let azm: f64 = dat.get(1).unwrap().parse().unwrap();
 						let alt: f64 = dat.get(2).unwrap().parse().unwrap();
