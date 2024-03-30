@@ -1,6 +1,7 @@
 use crate::teleBind::AltAzm;
 use std::{env, io::stdin};
 pub mod calc;
+pub mod rotctl;
 pub mod tele;
 pub mod teleBind;
 
@@ -21,7 +22,8 @@ fn main() {
 	if !is_aligned {
 		dbg!(tel.get_alt_az());
 		println!("Not aligned");
-		if !confirm() {
+		// if !confirm() {
+		if false {
 			panic!("Exiting since not aligned");
 		}
 	}
@@ -136,6 +138,10 @@ fn main() {
 				}
 				input();
 			}
+		}
+		"rotctl" => {
+			println!("ROTCTL");
+			rotctl::rotctl();
 		}
 		_ => {
 			panic!("Unknown input");

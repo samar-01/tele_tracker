@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 fn main() {
 	println!("cargo:rerun-if-changed=src/teleC.cpp");
+	println!("cargo:rerun-if-changed=src/libnexstar/nexstar.c");
 	cc::Build::new().file("src/teleC.cpp").file("src/libnexstar/nexstar.c").compile("teleC");
 	let bindings = bindgen::Builder::default()
 		.header("src/teleC.cpp")
