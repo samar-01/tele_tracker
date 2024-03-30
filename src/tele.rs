@@ -1,5 +1,6 @@
 use crate::teleBind::{self, *};
 
+#[derive(Clone)]
 pub struct Telescope {
 	dev: i8,
 }
@@ -11,7 +12,7 @@ impl Default for Telescope {
 }
 
 impl Telescope {
-	pub fn new() -> Telescope{
+	pub fn new() -> Telescope {
 		Telescope { dev: 0 }
 	}
 
@@ -38,5 +39,9 @@ impl Telescope {
 
 	pub fn goto_alt_az(&self, a: AltAzm) {
 		unsafe { teleBind::goto_alt_az(a) }
+	}
+
+	pub fn goto_alt_az_custom(&self, a: AltAzm) {
+		unsafe { teleBind::goto_alt_az_custom(a) }
 	}
 }

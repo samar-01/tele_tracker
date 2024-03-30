@@ -141,7 +141,7 @@ fn main() {
 		}
 		"rotctl" => {
 			println!("ROTCTL");
-			rotctl::rotctl();
+			rotctl::rotctl(tel);
 		}
 		_ => {
 			panic!("Unknown input");

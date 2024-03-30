@@ -15,7 +15,7 @@ int8_t init() {
 
 	unsigned char major;
 	unsigned char minor;
-	int ver = tc_get_version(dev,(char*) &major,(char*) &minor);
+	int ver = tc_get_version(dev, (char*)&major, (char*)&minor);
 	printf("Version %d.%d 0x%x\n", major, minor, ver);
 
 	time_t tm;
@@ -68,11 +68,11 @@ bool is_aligned() {
 	return tc_check_align(dev);
 }
 
-int8_t set_loc(double lat, double lon){
+int8_t set_loc(double lat, double lon) {
 	return tc_set_location(dev, lon, lat);
 }
 
-void get_loc(){
+void get_loc() {
 	double lon, lat;
 	tc_get_location(dev, &lon, &lat);
 	printf("%f, %f\n", lon, lat);
@@ -83,15 +83,29 @@ typedef struct AltAzm {
 	double azm;
 } AltAzm;
 
-AltAzm get_alt_az(){
+AltAzm get_alt_az() {
 	AltAzm a;
 	tc_get_azalt_p(dev, &a.azm, &a.alt);
 	return a;
 }
 
-void goto_alt_az(AltAzm a){
+void goto_alt_az(AltAzm a) {
 	if (a.azm < 0) {
 		a.azm += 360;
 	}
 	tc_goto_azalt_p(dev, a.azm, a.alt);
+}
+
+
+void goto_alt_az_custom(AltAzm a) {
+	#define SPEEDCONV 8191.8
+	AltAzm current = get_alt_az();
+	char dir;
+	if (a.alt < current.alt) {
+		dir = TC_DIR_POSITIVE;
+	} else {
+		dir = TC_DIR_NEGATIVE;
+	}
+	float yspeed = 1;
+	tc_slew_variable(dev, TC_AXIS_ALT, TC_DIR_POSITIVE, yspeed*SPEEDCONV);
 }
