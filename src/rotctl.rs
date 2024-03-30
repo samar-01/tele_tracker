@@ -1,11 +1,9 @@
 pub use crate::tele::Telescope;
-use std::io::{Read, Write};
+use crate::teleBind::{self, *};
+use std::io::{Cursor, Read, Write};
 use std::net::{TcpListener, TcpStream};
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use std::thread;
-
-use crate::teleBind::{goto_alt_az, goto_alt_az_custom, AltAzm};
 
 // use self::tele::Telescope;
 
@@ -43,8 +41,27 @@ pub fn rotctl(tel: Telescope) {
 
 fn run_tele(tel: Arc<Mutex<Telescope>>, target: Arc<Mutex<AltAzm>>) {
 	loop {
-		dbg!(&target);
-		std::thread::sleep(std::time::Duration::from_secs(1));
+		// dbg!(&target);
+		// dbg!((*target.lock().unwrap()));
+		// dbg!(tel.get_alt_az());
+		// tel.goto_test((*target.lock().unwrap()).clone());
+		// tel.goto_test(target);
+		let tar;
+		{
+			let guard = target.lock().unwrap();
+			tar = *guard;
+		}
+		dbg!(tar);
+		// tel.goto_alt_az(tar);
+		let start_time = std::time::Instant::now();
+		{
+			let guard = tel.lock().unwrap();
+			guard.goto_test(tar);
+		}
+		let end_time = std::time::Instant::now();
+		let elapsed_time = end_time.duration_since(start_time);
+		dbg!(elapsed_time);
+		std::thread::sleep(std::time::Duration::from_millis(300));
 	}
 }
 
@@ -61,7 +78,7 @@ impl rotctlServer {
 			host: host.to_string(),
 			port,
 			tel,
-			target, // target: AltAzm { alt: 0.0, azm: 0.0 },
+			target,
 		}
 	}
 
@@ -79,27 +96,35 @@ impl rotctlServer {
 
 				let response = match data.chars().next() {
 					Some('p') => {
-						println!("");
-						let current = self.tel.lock().unwrap().get_alt_az();
+						// let current = self.tel.get_alt_az();
+						let current;
+						// let current = AltAzm { alt: 0.0, azm: 0.0 };
+						{
+							let guard = self.tel.lock().unwrap();
+							current = guard.get_alt_az();
+						}
 						format!("{}\n{}\n", current.azm, current.alt)
 					}
 					Some('S') => "RPRT 0\n".to_string(),
+					Some('q') => "RPRT 0\n".to_string(),
 					Some('P') => {
 						println!("New position");
 						let dat = data.split(' ').collect::<Vec<&str>>();
 						let azm: f64 = dat.get(1).unwrap().parse().unwrap();
 						let alt: f64 = dat.get(2).unwrap().parse().unwrap();
 						let target = AltAzm { alt, azm };
-						// self.target.alt = alt;
-						// self.target.azm = azm;
-						// dbg!(self.target);
-						// let x= self.target.alt;
-						// Mutex::write(self.target, target);
-						self.target.lock().unwrap().alt = alt;
-						self.target.lock().unwrap().azm = azm;
+						{
+							let mut guard = self.target.lock().unwrap();
+							*guard = target;
+						}
 						"RPRT 0\n".to_string()
 					}
-					_ => "".to_string(),
+					x => {
+						print!("uh oh");
+						dbg!(x);
+						// "".to_string()
+						"RPRT 0\n".to_string()
+					}
 				};
 
 				if let Err(_) = stream.write(response.as_str().as_bytes()) {

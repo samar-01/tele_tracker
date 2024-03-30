@@ -1,3 +1,5 @@
+use nalgebra::{clamp, ComplexField};
+
 use crate::teleBind::{self, *};
 
 #[derive(Clone)]
@@ -41,7 +43,25 @@ impl Telescope {
 		unsafe { teleBind::goto_alt_az(a) }
 	}
 
-	pub fn goto_alt_az_custom(&self, a: AltAzm) {
+	pub fn goto_test(&self, a: AltAzm) {
 		unsafe { teleBind::goto_alt_az_custom(a) }
+		// let current = self.get_alt_az();
+		// let dir:i8;
+		// if a.alt > current.alt {
+		// 	dir = TC_DIR_POSITIVE as i8;
+		// } else if a.alt < current.alt {
+		// 	dir = TC_DIR_NEGATIVE as i8;
+		// } else {
+		// 	unsafe {
+		// 		teleBind::slew_variable(TC_AXIS_ALT as i8, TC_DIR_POSITIVE as i8, 0.0);
+		// 	}
+		// 	return;
+		// }
+
+		// let  mut rate: f32 = ((a.alt - current.alt)/5.0) as f32;
+		// // dbg!(rate);
+		// rate = rate.abs().clamp(0.0, 1.0)*SPEEDCONV as f32;
+		// // dbg!(rate);
+		// unsafe{teleBind::slew_variable(TC_AXIS_ALT as i8, dir, rate)}
 	}
 }

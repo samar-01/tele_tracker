@@ -96,16 +96,25 @@ void goto_alt_az(AltAzm a) {
 	tc_goto_azalt_p(dev, a.azm, a.alt);
 }
 
-
+#define SPEEDCONV 8191.8
 void goto_alt_az_custom(AltAzm a) {
-	#define SPEEDCONV 8191.8
 	AltAzm current = get_alt_az();
 	char dir;
-	if (a.alt < current.alt) {
+	if (a.alt > current.alt) {
 		dir = TC_DIR_POSITIVE;
 	} else {
 		dir = TC_DIR_NEGATIVE;
 	}
-	float yspeed = 1;
-	tc_slew_variable(dev, TC_AXIS_ALT, TC_DIR_POSITIVE, yspeed*SPEEDCONV);
+	double yspeed = (a.alt - current.alt)/5.0;
+	if (yspeed < 0){
+		yspeed *= -1;
+	}
+	if (yspeed > 1){
+		yspeed = 1;
+	}
+	tc_slew_variable(dev, TC_AXIS_ALT, dir, yspeed * SPEEDCONV);
+}
+
+void slew_variable(char axis, char direction, float rate) {
+	tc_slew_variable(dev, axis, direction, rate);
 }
